@@ -1,5 +1,4 @@
-Tubes Daspro
+#Tubes Daspro
 =============
 
-Aturan yang harus dipenuhi
-1. File CSV harus memiliki header
+Program sesuai spesifikasi TUBES
