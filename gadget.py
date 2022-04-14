@@ -164,7 +164,7 @@ def ubahjumlah(folder_name, gadget, consumable) :
             stok_awal = data[urutanID]['jumlah']
         jumlah = int(input("Masukan Jumlah: "))
         if int(stok_awal) + jumlah < 0 : # Apabila stoknya menjadi negatif karena kebuang terlalu banyak
-            print(jumlah, data[urutanID]['nama'], 'gagal dibuang karena stok kurang. Stok sekarang:', stok_awal, "(<", str(jumlah*-1) + ")")
+            print(abs(jumlah), data[urutanID]['nama'], 'gagal dibuang karena stok kurang. Stok sekarang:', stok_awal, "(<", str(jumlah*-1) + ")")
             return '', None
         else : #Untuk kasus stoknya tetap valid
             data[urutanID]['jumlah'] = str(int(stok_awal) + jumlah)
@@ -189,12 +189,23 @@ def save(consumable, consumable_history, gadget, gadget_borrow_history, gadget_r
         belum_ada = 0
 
     # copy data
-    bulk_write(consumable, folder_name, folder_tujuan, 'consumable.csv', belum_ada)
-    bulk_write(consumable_history, folder_name, folder_tujuan, 'consumable_history.csv', belum_ada)
-    bulk_write(gadget, folder_name, folder_tujuan, 'gadget.csv', belum_ada)
-    bulk_write(gadget_borrow_history, folder_name, folder_tujuan, 'gadget_borrow_history.csv', belum_ada)
-    bulk_write(gadget_return_history, folder_name, folder_tujuan, 'gadget_return_history.csv', belum_ada)
-    bulk_write(users, folder_name, folder_tujuan, 'user.csv', belum_ada)
+
+    header = [
+        'id;nama;deskripsi;jumlah;rarity',
+        'id;id_pengambil;id_consumable;tanggal_peminjaman;jumlah',
+        'id;nama;deskripsi;jumlah;rarity;tahun_ditemukan',
+        'id;id_peminjam;id_gadget;tanggal_peminjaman;jumlah;is_returned',
+        'id;id_peminjam;id_gadget;tanggal_pengembalian;jumlah_pengembalian',
+        'id;username;nama;alamat;password;role'
+    ]
+
+
+    bulk_write(consumable, folder_name, folder_tujuan, 'consumable.csv', belum_ada, header[0])
+    bulk_write(consumable_history, folder_name, folder_tujuan, 'consumable_history.csv', belum_ada, header[1])
+    bulk_write(gadget, folder_name, folder_tujuan, 'gadget.csv', belum_ada, header[2])
+    bulk_write(gadget_borrow_history, folder_name, folder_tujuan, 'gadget_borrow_history.csv', belum_ada, header[3])
+    bulk_write(gadget_return_history, folder_name, folder_tujuan, 'gadget_return_history.csv', belum_ada, header[4])
+    bulk_write(users, folder_name, folder_tujuan, 'user.csv', belum_ada, header[5])
 
     print("Data telah disimpan pada folder " + folder_tujuan + '!')
 
@@ -222,7 +233,7 @@ def keluar(consumable, consumable_history, gadget, gadget_borrow_history, gadget
     else:
         print("Perubahan tidak disimpan")
 
-def riwayatpinjam(folder_name, gadget_borrow_history, users) :
+def riwayatpinjam(folder_name, gadget_borrow_history, gadget, users) :
 # Melihat riwayat peminjaman gadget
 # Output : 5 entry terbaru berdasarkan tanggal peminjaman
     
@@ -232,6 +243,11 @@ def riwayatpinjam(folder_name, gadget_borrow_history, users) :
     filename_gadget = folder_name + '/gadget.csv'
     data.sort(key = lambda x: datetime.strptime(x['tanggal_peminjaman'], '%d/%m/%Y'))     # alternatif 2 buat sort date
     data.reverse()
+
+    if len(data) == 0:
+        print("Tidak ada data yang dapat ditampilkan")
+        return
+        
     # Menampilkan 5 entry dari data paling baru 
     banyak_ditampilkan = min(len(data), 5)
     
@@ -240,7 +256,7 @@ def riwayatpinjam(folder_name, gadget_borrow_history, users) :
         id_peminjam = search(filename, gadget_borrow_history, {'id_peminjam': data[i]["id_peminjam"]})[0]['id_peminjam']
         peminjam = search(filename_user, users, {'id': id_peminjam})[0]['nama']
 
-        id_gadget = search(filename, {'id_gadget': data[i]["id_gadget"]})[0]['id_gadget']
+        id_gadget = search(filename, gadget_borrow_history, {'id_gadget': data[i]["id_gadget"]})[0]['id_gadget']
         gadget_yang_dipinjam = search(filename_gadget, gadget, {'id': id_gadget})[0]['nama']
 
         print("ID Peminjaman\t\t :", data[i]["id"])
@@ -294,6 +310,10 @@ def riwayatkembali(folder_name, gadget_return_history, gadget, users) :
     
 
     data = gadget_return_history
+
+    if len(data) == 0:
+        print("Tidak ada data yang dapat ditampilkan")
+        return
 
     data.sort(key = lambda x: datetime.strptime(x['tanggal_pengembalian'], '%d/%m/%Y'))     # alternatif 2 buat sort date
     data.reverse()
@@ -362,6 +382,9 @@ def riwayatambil(folder_name, consumable_history, consumable, users) :
     filename_consumable = folder_name + '/consumable.csv'
 
     data = consumable_history
+    if len(data) == 0:
+        print("Tidak ada data yang dapat ditampilkan")
+        return
 
     data.sort(key = lambda x: datetime.strptime(x['tanggal_pengambilan'], '%d/%m/%Y'))     # alternatif 2 buat sort date
     data.reverse()
@@ -419,7 +442,7 @@ def riwayatambil(folder_name, consumable_history, consumable, users) :
                 c = input("Apakah Anda ingin melihat riwayat tambahan (y/n)? ")
                 idx += 5
 
-def pinjam(userID, gadget, gadget_borrow_history, folder_name) :
+def pinjam(userID, gadget, consumable, gadget_borrow_history, folder_name) :
 # Fungsi untuk melakukan peminjaman gadget
 
     data = gadget
@@ -427,7 +450,7 @@ def pinjam(userID, gadget, gadget_borrow_history, folder_name) :
     # Menerima input ID
     id = input("Masukan ID item\t\t : ")
     # Memeriksa apakah ID valid atau tidak. Id dikatakan valid jika ID gadget terdapat pada file gadget.csv
-    while (id[0] != "G" and mencari_id(id, gadget, consumable, folder_name)[0] == False) : 
+    while (id[0] != "G" or mencari_id(id, gadget, consumable, folder_name)[0] == False) : 
         print("ID tidak valid! Periksa kembali ID item")
         id = input("Masukan ID item\t : ")
 
@@ -446,7 +469,7 @@ def pinjam(userID, gadget, gadget_borrow_history, folder_name) :
     while (data[idx_id]["jumlah"] < jumlah_peminjaman) :
         print("Jumlah peminjaman melebihi stok pada inventori. Kurangi jumlah peminjaman!")
         jumlah_peminjaman = int(input("Jumlah Peminjaman\t : "))
-
+    
     new_data = {'id' : str(get_last_id(gadget_borrow_history) + 1), 'id_peminjam' : userID , 'id_gadget' : id[1], 'tanggal_peminjaman' : tanggal_peminjaman, 'jumlah' : jumlah_peminjaman, 'is_returned' : "False"}
     
     c = input("Apakah Anda yakin ingin meminjam " + data[idx_id]["nama"] + " sebanyak " + str(jumlah_peminjaman) + " buah (y/n)? ")
@@ -466,7 +489,7 @@ def pinjam(userID, gadget, gadget_borrow_history, folder_name) :
 # 6;1;6;10/01/2000;1;False
 
 #edge case apa yang terjadi bila id tidak urut 
-def kembalikan(userID, gadget_borrow_history, gadget_return_history, folder_name) :
+def kembalikan(userID, gadget_borrow_history, gadget_return_history, gadget, folder_name) :
 # Fungsi untuk melakukan pengembalian gadget secara total
 
     data = gadget_borrow_history
@@ -487,7 +510,7 @@ def kembalikan(userID, gadget_borrow_history, gadget_return_history, folder_name
         
         num = 1
         for i in range (1, len(borrowed_gadget), 2) :
-            available_gadget = search(folder_name + '/gadget.csv', {'id': borrowed_gadget[i]["id_gadget"]})[0]['nama']
+            available_gadget = search(folder_name + '/gadget.csv', gadget, {'id': borrowed_gadget[i]["id_gadget"]})[0]['nama']
             print(str(num) + ". " + available_gadget)
             num += 1
 
@@ -516,12 +539,12 @@ def kembalikan(userID, gadget_borrow_history, gadget_return_history, folder_name
                 if data[i]['id_gadget'] == id_gadget and data[i]['id_peminjam'] == userID:
                     data[i]['is_returned'] = "True"
 
-            print("Item " + search(folder_name + '/gadget.csv', {'id': id_gadget})[0]['nama'] + "(x" + str(borrowed_gadget[idx_return]['jumlah']) + ") telah dikembalikan sebanyak " + str(jumlah_dikembalikan))
+            print("Item " + search(folder_name + '/gadget.csv', gadget, {'id': id_gadget})[0]['nama'] + "(x" + str(borrowed_gadget[idx_return]['jumlah']) + ") telah dikembalikan sebanyak " + str(jumlah_dikembalikan))
             gadget_return_history.append(new_data)
             return gadget_return_history, data
         elif jumlah_dikembalikan + sudah_dikembalikan_sebelumnya < int(borrowed_gadget[idx_return]['jumlah']):
             new_data = {'id' : get_last_id(gadget_return_history) + 1, "id_peminjam" : userID, "id_gadget" : id_gadget , "tanggal_pengembalian" : tanggal_pengembalian, "jumlah_pengembalian": jumlah_dikembalikan}
-            print("Item " + search(folder_name + '/gadget.csv', {'id': id_gadget})[0]['nama'] + "(x" + str(borrowed_gadget[idx_return]['jumlah']) + ") telah dikembalikan sebanyak " + str(jumlah_dikembalikan))
+            print("Item " + search(folder_name + '/gadget.csv', gadget, {'id': id_gadget})[0]['nama'] + "(x" + str(borrowed_gadget[idx_return]['jumlah']) + ") telah dikembalikan sebanyak " + str(jumlah_dikembalikan))
             gadget_return_history.append(new_data)
             return gadget_return_history , data
         else:

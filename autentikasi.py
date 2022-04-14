@@ -36,18 +36,17 @@ def register(users):
 
     new_name = ''
     new_username = ''
-
-    username_exist = True
-    while username_exist:
+    
+    new_name = str.title(input("Masukkan nama : "))
+    username_exist = False
+    while username_exist == False:
+        username_exist = True
         
-        new_name = str.title(input("Masukkan nama : "))
         new_username = input("Masukkan username : ")
         for user in all_user:
             if user['username'] == new_username:
-                print("Username telah ada, pilih username lain")
-                continue
-
-        username_exist = False
+                print("Username telah ada!")
+                username_exist = False
 
         
 

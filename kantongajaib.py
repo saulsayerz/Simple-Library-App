@@ -16,7 +16,18 @@ if __name__ == '__main__':
     finish = False
     perubahan = False
     if folder_name != None:
+        
         akses = login(users)
+        print()
+        print()
+        print("Berikut perintah yang dapat tersedia:\n")
+        
+        help()
+
+        print()
+        print()
+
+        
     while not finish:
         if folder_name == None:
             # folder tidak ada
@@ -69,7 +80,7 @@ if __name__ == '__main__':
             if akses['admin'] == False:
                 print("Anda bukan admin")
                 continue
-            jenis, data = ubahjumlah(folder_name, gadget, folder_name)
+            jenis, data = ubahjumlah(folder_name, gadget, consumable)
             if jenis == 'gadget':
                 gadget = (data)
             elif jenis == 'consumable':
@@ -81,7 +92,7 @@ if __name__ == '__main__':
             if akses['user'] == False:
                 print("Hanya user yang boleh meminjam")
                 continue
-            ret = pinjam(akses['akun']['id'], gadget, gadget_borrow_history, folder_name)
+            ret = pinjam(akses['akun']['id'], gadget, consumable, gadget_borrow_history, folder_name)
             if ret != None:
                 gadget_borrow_history = (ret)
                 perubahan =  True
@@ -90,7 +101,7 @@ if __name__ == '__main__':
             if akses['user'] == False:
                 print("Hanya user yang boleh mengembalikan")
                 continue
-            ret, update = kembalikan(akses['akun']['id'], gadget_borrow_history, gadget_return_history, folder_name)
+            ret, update = kembalikan(akses['akun']['id'], gadget_borrow_history, gadget_return_history, gadget, folder_name)
             if ret != None:
                 
                 gadget_return_history = (ret)

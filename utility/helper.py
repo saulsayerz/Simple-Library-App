@@ -317,7 +317,7 @@ def search(filename, data, cari) :
                 bersih.append(kotor[i])
         return bersih
 
-def bulk_write(data, from_folder, to_folder, csv_name, belum_ada):
+def bulk_write(data, from_folder, to_folder, csv_name, belum_ada, header):
     os.chdir(to_folder)
     if os.name == 'nt':
         os.system("cd . > " + csv_name)
@@ -326,7 +326,7 @@ def bulk_write(data, from_folder, to_folder, csv_name, belum_ada):
     
     os.chdir('..')
     with open(to_folder + '/' + csv_name, 'w') as f:
-        head = get_header(from_folder + '/' + csv_name)
+        head = split_csv(header)
         string = ''
         for i in head:
             string += i + ';'
